@@ -1,4 +1,4 @@
-name: بيت الأرملة السوداء
+name: 📚 دفتر خانة - اقتباس يومي
 
 on:
   schedule:
@@ -12,10 +12,10 @@ jobs:
     
     steps:
       - name: 📥 سحب الكود
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         
       - name: 🐍 إعداد بايثون
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
           
@@ -27,10 +27,40 @@ jobs:
       - name: 🎨 تحميل الخطوط
         run: |
           mkdir -p fonts
-          # تحميل خط Amiri من جوجل
-          curl -L -o fonts/Amiri-Regular.ttf "https://github.com/alif-type/amiri/releases/download/0.112/Amiri-Regular.ttf"
-          # تحميل خط Aref Ruqaa من جوجل فونتس
-          curl -L -o fonts/ArefRuqaa-Regular.ttf "https://github.com/googlefonts/arefruqaa/raw/main/fonts/ttf/ArefRuqaa-Regular.ttf"
+          
+          # تحميل خط Amiri من GitHub Releases
+          echo "⏳ جاري تحميل خط Amiri..."
+          curl -L "https://github.com/alif-type/amiri/releases/download/v0.112/Amiri-regular.ttf" -o fonts/Amiri-Regular.ttf || \
+          curl -L "https://raw.githubusercontent.com/alif-type/amiri/master/fonts/Amiri-Regular.ttf" -o fonts/Amiri-Regular.ttf || \
+          curl -L "https://cdn.jsdelivr.net/gh/alif-type/amiri@v0.112/fonts/Amiri-Regular.ttf" -o fonts/Amiri-Regular.ttf
+          
+          # تحميل خط Aref Ruqaa
+          echo "⏳ جاري تحميل خط Aref Ruqaa..."
+          curl -L "https://github.com/google/fonts/raw/main/ofl/arefruqaa/ArefRuqaa%5Bwght%5D.ttf" -o fonts/ArefRuqaa-Regular.ttf || \
+          curl -L "https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/arefruqaa/ArefRuqaa[wght].ttf" -o fonts/ArefRuqaa-Regular.ttf
+          
+          # التأكد من وجود الخطوط
+          echo "📋 الملفات في مجلد fonts:"
+          ls -la fonts/
+          
+          # لو الخطوط مش اتحملت، استخدم خطوط النظام
+          if [ ! -f "fonts/Amiri-Regular.ttf" ]; then
+            echo "⚠️ خط Amiri مش متوفر، هتستخدم خط بديل..."
+            sudo apt-get update
+            sudo apt-get install -y fonts-amiri
+            mkdir -p fonts
+            cp /usr/share/fonts/truetype/amiri/Amiri-Regular.ttf fonts/Amiri-Regular.ttf 2>/dev/null || \
+            cp /usr/share/fonts/truetype/amiri/amiri.ttf fonts/Amiri-Regular.ttf 2>/dev/null || \
+            echo "❌ مافيش خطوط Amiri"
+          fi
+          
+          if [ ! -f "fonts/ArefRuqaa-Regular.ttf" ]; then
+            echo "⚠️ خط Aref Ruqaa مش متوفر، هتستخدم خط بديل..."
+            # استخدم خط Droid Arabic Naskh كبديل
+            sudo apt-get install -y fonts-droid-arabic || true
+          fi
+          
+          echo "✅ الخطوط جاهزة!"
           
       - name: 🤖 تشغيل البوت
         env:
