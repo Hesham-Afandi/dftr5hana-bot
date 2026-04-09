@@ -1,0 +1,42 @@
+name: بيت الأرملة السوداء
+
+on:
+  schedule:
+    # كل يوم الساعة 4 مساءً بتوقيت القاهرة (14:00 UTC)
+    - cron: '0 14 * * *'
+  workflow_dispatch: # للتشغيل اليدوي للاختبار
+
+jobs:
+  send-daily-quote:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 سحب الكود
+        uses: actions/checkout@v3
+        
+      - name: 🐍 إعداد بايثون
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          
+      - name: 📦 تثبيت المكتبات
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          
+      - name: 🎨 تحميل الخطوط
+        run: |
+          mkdir -p fonts
+          # تحميل خط Amiri من جوجل
+          curl -L -o fonts/Amiri-Regular.ttf "https://github.com/alif-type/amiri/releases/download/0.112/Amiri-Regular.ttf"
+          # تحميل خط Aref Ruqaa من جوجل فونتس
+          curl -L -o fonts/ArefRuqaa-Regular.ttf "https://github.com/googlefonts/arefruqaa/raw/main/fonts/ttf/ArefRuqaa-Regular.ttf"
+          
+      - name: 🤖 تشغيل البوت
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: python main.py
+        
+      - name: 🧹 تنظيف (اختياري)
+        if: always()
+        run: rm -f daily_quote.jpg
