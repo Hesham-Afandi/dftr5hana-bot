@@ -2,39 +2,41 @@ import os
 import random
 import requests
 from datetime import datetime
-from generate_image import create_quote_image
 
-# 🔐 البيانات من GitHub Secrets
+# 🔐 إعدادات البوت (تُقرأ تلقائياً من GitHub Secrets)
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHANNEL_ID = "@BlackWidowHouse"
 WEBSITE_URL = "https://dftr5ana.netlify.app/?utm_source=telegram&utm_medium=bot&utm_campaign=daily_quote"
+QUOTES_FILE = "quotes.txt"
 
-def load_quotes(file="quotes.txt"):
+def load_quotes():
     """تحميل الاقتباسات من ملف النص"""
-    if not os.path.exists(file):
-        print(f"⚠️ ملف {file} غير موجود!")
+    if not os.path.exists(QUOTES_FILE):
+        print(f"⚠️ ملف {QUOTES_FILE} غير موجود!")
         return []
-    with open(file, "r", encoding="utf-8") as f:
+    with open(QUOTES_FILE, "r", encoding="utf-8") as f:
         lines = [line.strip() for line in f if line.strip() and "|" in line]
     return [line.split("|", 1) for line in lines]
 
-def send_to_telegram(image_path, quote_ar, author_ar):
-    """إرسال الصورة مع كابشن عربي للقناة"""
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
+def send_text_message(quote, author):
+    """إرسال اقتباس نصي منسق للقناة"""
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     
-    caption = (
+    message = (
         f"📖 *اقتباس اليوم من دفتر خانة*\n\n"
-        f"🔹 \"{quote_ar}\"\n"
-        f"— {author_ar}\n\n"
-        f"🌐 اكتشف آلاف الكتب والاقتباسات: {WEBSITE_URL}\n"
+        f"🔹 \"{quote}\"\n"
+        f"— {author}\n\n"
+        f"🌐 اكتشف آلاف الكتب والاقتباسات:\n{WEBSITE_URL}\n\n"
         f"#اقتباسات #دفتر_خانة #قراءة #أدب #هشام_أفندي"
     )
     
-    with open(image_path, "rb") as img:
-        payload = {"chat_id": CHANNEL_ID, "caption": caption, "parse_mode": "Markdown"}
-        files = {"photo": img}
-        res = requests.post(url, data=payload, files=files)
-        
+    payload = {
+        "chat_id": CHANNEL_ID,
+        "text": message,
+        "parse_mode": "Markdown"
+    }
+    
+    res = requests.post(url, json=payload)
     if res.status_code == 200:
         print(f"✅ تم النشر بنجاح | {datetime.now().strftime('%Y-%m-%d %H:%M')}")
         return True
@@ -42,49 +44,17 @@ def send_to_telegram(image_path, quote_ar, author_ar):
         print(f"❌ فشل النشر: {res.text}")
         return False
 
-def send_text_only(quote_ar, author_ar):
-    """إرسال نص فقط في حال فشل توليد الصورة"""
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    caption = (
-        f"📖 *اقتباس اليوم من دفتر خانة*\n\n"
-        f"🔹 \"{quote_ar}\"\n"
-        f"— {author_ar}\n\n"
-        f"🌐 {WEBSITE_URL}"
-    )
-    payload = {"chat_id": CHANNEL_ID, "text": caption, "parse_mode": "Markdown"}
-    res = requests.post(url, json=payload)
-    status = "✅ تم إرسال النص بنجاح" if res.status_code == 200 else f"❌ فشل إرسال النص: {res.text}"
-    print(status)
-
 def main():
-    print("🤖 بدء بوت دفتر خانة للاقتباسات اليومية...")
+    print("🤖 بدء بوت دفتر خانة (نسخة نصية)...")
     
     quotes = load_quotes()
     if not quotes:
-        print("⚠️ لا توجد اقتباسات للتحميل!")
+        print("⚠️ لا توجد اقتباسات صالحة في الملف!")
         return
         
-    quote_ar, author_ar = random.choice(quotes)
-    img_path = "daily_quote.jpg"
-    
-    print("🎨 جاري توليد الصورة (نمط إنجليزي آمن)...")
-    try:
-        create_quote_image(quote_ar, author_ar, img_path)
-        
-        if os.path.exists(img_path):
-            print("📡 جاري الإرسال للقناة @BlackWidowHouse...")
-            success = send_to_telegram(img_path, quote_ar, author_ar)
-            if not success:
-                send_text_only(quote_ar, author_ar)
-            # تنظيف الملف بعد الإرسال
-            os.remove(img_path)
-        else:
-            print("⚠️ لم يتم إنشاء الصورة، جاري إرسال نص فقط...")
-            send_text_only(quote_ar, author_ar)
-            
-    except Exception as e:
-        print(f"⚠️ خطأ غير متوقع: {e}. جاري إرسال نص فقط...")
-        send_text_only(quote_ar, author_ar)
+    quote, author = random.choice(quotes)
+    print(f"📡 جاري إرسال: {quote[:30]}...")
+    send_text_message(quote, author)
 
 if __name__ == "__main__":
     main()
