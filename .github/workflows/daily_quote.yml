@@ -1,30 +1,28 @@
-name:بيت الأرملة السوداء
+name: Daily Quote Bot
 
 on:
   schedule:
-    # كل يوم الساعة 4 مساءً بتوقيت القاهرة (14:00 UTC)
-    - cron: '0 14 * * *'
-  workflow_dispatch: # للتشغيل اليدوي للاختبار
+    - cron: "0 14 * * *"
+  workflow_dispatch:
 
 jobs:
-  send-daily-quote:
+  send-quote:
     runs-on: ubuntu-latest
-    
     steps:
-      - name: 📥 سحب الكود
+      - name: Checkout code
         uses: actions/checkout@v4
-        
-      - name: 🐍 إعداد بايثون
+
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          
-      - name: 📦 تثبيت المكتبات
+          python-version: "3.11"
+
+      - name: Install dependencies
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
-          
-      - name: 🤖 تشغيل البوت (نصي فقط)
+
+      - name: Run bot
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
         run: python main.py
