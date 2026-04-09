@@ -1,0 +1,30 @@
+name:بيت الأرملة السوداء
+
+on:
+  schedule:
+    # كل يوم الساعة 4 مساءً بتوقيت القاهرة (14:00 UTC)
+    - cron: '0 14 * * *'
+  workflow_dispatch: # للتشغيل اليدوي للاختبار
+
+jobs:
+  send-daily-quote:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 سحب الكود
+        uses: actions/checkout@v4
+        
+      - name: 🐍 إعداد بايثون
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: 📦 تثبيت المكتبات
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          
+      - name: 🤖 تشغيل البوت (نصي فقط)
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: python main.py
