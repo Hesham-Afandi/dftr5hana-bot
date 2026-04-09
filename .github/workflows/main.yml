@@ -1,72 +1,90 @@
-name: بيت الأرملة السوداء
+import os
+import random
+import requests
+from datetime import datetime
+from generate_image import create_quote_image
 
-on:
-  schedule:
-    # كل يوم الساعة 4 مساءً بتوقيت القاهرة (14:00 UTC)
-    - cron: '0 14 * * *'
-  workflow_dispatch: # للتشغيل اليدوي للاختبار
+# 🔐 البيانات من GitHub Secrets
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+CHANNEL_ID = "@BlackWidowHouse"
+WEBSITE_URL = "https://dftr5ana.netlify.app/?utm_source=telegram&utm_medium=bot&utm_campaign=daily_quote"
 
-jobs:
-  send-daily-quote:
-    runs-on: ubuntu-latest
+def load_quotes(file="quotes.txt"):
+    """تحميل الاقتباسات من ملف النص"""
+    if not os.path.exists(file):
+        print(f"⚠️ ملف {file} غير موجود!")
+        return []
+    with open(file, "r", encoding="utf-8") as f:
+        lines = [line.strip() for line in f if line.strip() and "|" in line]
+    return [line.split("|", 1) for line in lines]
+
+def send_to_telegram(image_path, quote_ar, author_ar):
+    """إرسال الصورة مع كابشن عربي للقناة"""
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
     
-    steps:
-      - name: 📥 سحب الكود
-        uses: actions/checkout@v4
+    caption = (
+        f"📖 *اقتباس اليوم من دفتر خانة*\n\n"
+        f"🔹 \"{quote_ar}\"\n"
+        f"— {author_ar}\n\n"
+        f"🌐 اكتشف آلاف الكتب والاقتباسات: {WEBSITE_URL}\n"
+        f"#اقتباسات #دفتر_خانة #قراءة #أدب #هشام_أفندي"
+    )
+    
+    with open(image_path, "rb") as img:
+        payload = {"chat_id": CHANNEL_ID, "caption": caption, "parse_mode": "Markdown"}
+        files = {"photo": img}
+        res = requests.post(url, data=payload, files=files)
         
-      - name: 🐍 إعداد بايثون
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-          
-      - name: 📦 تثبيت المكتبات
-        run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
-          
-      - name: 🎨 تحميل الخطوط
-        run: |
-          mkdir -p fonts
-          
-          # تحميل خط Amiri من GitHub Releases
-          echo "⏳ جاري تحميل خط Amiri..."
-          curl -L "https://github.com/alif-type/amiri/releases/download/v0.112/Amiri-regular.ttf" -o fonts/Amiri-Regular.ttf || \
-          curl -L "https://raw.githubusercontent.com/alif-type/amiri/master/fonts/Amiri-Regular.ttf" -o fonts/Amiri-Regular.ttf || \
-          curl -L "https://cdn.jsdelivr.net/gh/alif-type/amiri@v0.112/fonts/Amiri-Regular.ttf" -o fonts/Amiri-Regular.ttf
-          
-          # تحميل خط Aref Ruqaa
-          echo "⏳ جاري تحميل خط Aref Ruqaa..."
-          curl -L "https://github.com/google/fonts/raw/main/ofl/arefruqaa/ArefRuqaa%5Bwght%5D.ttf" -o fonts/ArefRuqaa-Regular.ttf || \
-          curl -L "https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/arefruqaa/ArefRuqaa[wght].ttf" -o fonts/ArefRuqaa-Regular.ttf
-          
-          # التأكد من وجود الخطوط
-          echo "📋 الملفات في مجلد fonts:"
-          ls -la fonts/
-          
-          # لو الخطوط مش اتحملت، استخدم خطوط النظام
-          if [ ! -f "fonts/Amiri-Regular.ttf" ]; then
-            echo "⚠️ خط Amiri مش متوفر، هتستخدم خط بديل..."
-            sudo apt-get update
-            sudo apt-get install -y fonts-amiri
-            mkdir -p fonts
-            cp /usr/share/fonts/truetype/amiri/Amiri-Regular.ttf fonts/Amiri-Regular.ttf 2>/dev/null || \
-            cp /usr/share/fonts/truetype/amiri/amiri.ttf fonts/Amiri-Regular.ttf 2>/dev/null || \
-            echo "❌ مافيش خطوط Amiri"
-          fi
-          
-          if [ ! -f "fonts/ArefRuqaa-Regular.ttf" ]; then
-            echo "⚠️ خط Aref Ruqaa مش متوفر، هتستخدم خط بديل..."
-            # استخدم خط Droid Arabic Naskh كبديل
-            sudo apt-get install -y fonts-droid-arabic || true
-          fi
-          
-          echo "✅ الخطوط جاهزة!"
-          
-      - name: 🤖 تشغيل البوت
-        env:
-          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-        run: python main.py
+    if res.status_code == 200:
+        print(f"✅ تم النشر بنجاح | {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+        return True
+    else:
+        print(f"❌ فشل النشر: {res.text}")
+        return False
+
+def send_text_only(quote_ar, author_ar):
+    """إرسال نص فقط في حال فشل توليد الصورة"""
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    caption = (
+        f"📖 *اقتباس اليوم من دفتر خانة*\n\n"
+        f"🔹 \"{quote_ar}\"\n"
+        f"— {author_ar}\n\n"
+        f"🌐 {WEBSITE_URL}"
+    )
+    payload = {"chat_id": CHANNEL_ID, "text": caption, "parse_mode": "Markdown"}
+    res = requests.post(url, json=payload)
+    status = "✅ تم إرسال النص بنجاح" if res.status_code == 200 else f"❌ فشل إرسال النص: {res.text}"
+    print(status)
+
+def main():
+    print("🤖 بدء بوت دفتر خانة للاقتباسات اليومية...")
+    
+    quotes = load_quotes()
+    if not quotes:
+        print("⚠️ لا توجد اقتباسات للتحميل!")
+        return
         
-      - name: 🧹 تنظيف (اختياري)
-        if: always()
-        run: rm -f daily_quote.jpg
+    quote_ar, author_ar = random.choice(quotes)
+    img_path = "daily_quote.jpg"
+    
+    print("🎨 جاري توليد الصورة (نمط إنجليزي آمن)...")
+    try:
+        create_quote_image(quote_ar, author_ar, img_path)
+        
+        if os.path.exists(img_path):
+            print("📡 جاري الإرسال للقناة @BlackWidowHouse...")
+            success = send_to_telegram(img_path, quote_ar, author_ar)
+            if not success:
+                send_text_only(quote_ar, author_ar)
+            # تنظيف الملف بعد الإرسال
+            os.remove(img_path)
+        else:
+            print("⚠️ لم يتم إنشاء الصورة، جاري إرسال نص فقط...")
+            send_text_only(quote_ar, author_ar)
+            
+    except Exception as e:
+        print(f"⚠️ خطأ غير متوقع: {e}. جاري إرسال نص فقط...")
+        send_text_only(quote_ar, author_ar)
+
+if __name__ == "__main__":
+    main()
