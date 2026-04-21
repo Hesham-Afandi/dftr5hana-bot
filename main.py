@@ -26,7 +26,7 @@ def send_text_message(quote, author):
         f"📖 *اقتباس اليوم من دفتر خانة*\n\n"
         f"🔹 \"{quote}\"\n"
         f"— {author}\n\n"
-        f"🌐 اكتشف آلاف الكتب والاقتباسات:\n{WEBSITE_URL}\n\n"
+        f"🌐 اكتشف آلاف الكتب والاقتباسات:\n{https://hesham-afandi.github.io/DafterKhana/}\n\n"
         f"#اقتباسات #دفتر_خانة #قراءة #أدب #هشام_أفندي"
     )
     
