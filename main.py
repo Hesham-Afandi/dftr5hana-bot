@@ -6,7 +6,7 @@ from datetime import datetime
 # 🔐 إعدادات البوت (تُقرأ تلقائياً من GitHub Secrets)
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHANNEL_ID = "@BlackWidowHouse"
-WEBSITE_URL = "https://dftr5ana.netlify.app/?utm_source=telegram&utm_medium=bot&utm_campaign=daily_quote"
+WEBSITE_URL = "https://hesham-afandi.github.io/DafterKhana//?utm_source=telegram&utm_medium=bot&utm_campaign=daily_quote"
 QUOTES_FILE = "quotes.txt"
 
 def load_quotes():
@@ -27,7 +27,7 @@ def send_text_message(quote, author):
         f"🔹 \"{quote}\"\n"
         f"— {author}\n\n"
         f"🌐 اكتشف آلاف الكتب والاقتباسات:\n{https://hesham-afandi.github.io/DafterKhana/}\n\n"
-        f"#اقتباسات #دفتر_خانة #قراءة #أدب #هشام_أفندي"
+        f"#اقتباسات #دفتر_خانة #قراءة #بيت_الأرملة_السوداء #هشام_أفندي"
     )
     
     payload = {
