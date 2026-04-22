@@ -6,7 +6,7 @@ from datetime import datetime
 from io import BytesIO
 
 # 🔐 الإعدادات
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+BOT_TOKEN = os.getenv("8314204248AAE-ER6f0Bbenj9xtw96pT8-e56uLcrGnOI")
 CHANNEL_ID = "@BlackWidowHouse"
 WEBSITE_URL = "https://hesham-afandi.github.io/DafterKhana/"
 LOGO_URL = "https://hesham-afandi.github.io/DafterKhana/logo.png"
